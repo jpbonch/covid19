@@ -1,0 +1,66 @@
+---
+title: "California Covid-19"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(shiny)
+library(data.table)
+library(ggplot2)
+library(dplyr)
+latimes.state.totals <- fread("https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/latimes-state-totals.csv", na.strings="?")
+latimes.county.totals <- fread("https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/latimes-county-totals.csv")
+cdph.race.ethnicity <- fread("https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/cdph-race-ethnicity.csv")
+```
+
+```{r, include=FALSE}
+today = latimes.state.totals[1, "date"]
+cases = latimes.state.totals[1, "confirmed_cases"]
+new.cases = latimes.state.totals[1, "new_confirmed_cases"]
+deaths = latimes.state.totals[1 , "deaths"]
+new.deaths = latimes.state.totals[1, "new_deaths"]
+```
+# As of `r today` 
+# Cases: `r cases` (+`r new.cases`)
+# Deaths: `r deaths` (+`r new.deaths`)
+
+```{r, echo=FALSE}
+ggplot(latimes.state.totals) + 
+  geom_line(aes(x=as.Date(date), y=confirmed_cases, group=1)) +
+  geom_line(aes(x=as.Date(date), y=deaths, group=1)) + 
+  scale_x_date(date_labels = "%b",date_breaks = '1 month') +
+  labs(x = "Date", 
+       y = "Number of Cases",
+       title = "Evolution of cases in 2020") +
+  theme_minimal()
+```
+
+```{r, echo=FALSE}
+
+selectInput("county1", label = "County 1:",
+              choices = unique(latimes.county.totals$county), selected = "Los Angeles")
+selectInput("county2", label = "County 2:",
+              choices = unique(latimes.county.totals$county), selected = "San Diego")
+selectInput("county3", label = "County 3:",
+              choices = unique(latimes.county.totals$county), selected = "Orange")
+selectInput("county4", label = "County 4:",
+              choices = unique(latimes.county.totals$county), selected = "San Francisco")
+selectInput("county5", label = "County 5:",
+              choices = unique(latimes.county.totals$county), selected = "Riverside")
+
+renderPlot({
+ggplot() + 
+  geom_line(data=filter(latimes.county.totals, county == input$county1), aes(as.Date(date), confirmed_cases, group=1)) +
+  geom_line(data=filter(latimes.county.totals, county == input$county2), aes(as.Date(date), confirmed_cases, group=1)) +
+  geom_line(data=filter(latimes.county.totals, county == input$county3), aes(as.Date(date), confirmed_cases, group=1)) +
+  geom_line(data=filter(latimes.county.totals, county == input$county4), aes(as.Date(date), confirmed_cases, group=1)) +
+  geom_line(data=filter(latimes.county.totals, county == input$county5), aes(as.Date(date), confirmed_cases, group=1)) +
+  scale_x_date(date_labels = "%b",date_breaks = '1 month') +
+  labs(x = "Date", 
+       y = "Number of Cases",
+       title = "Cases per county") +
+  theme_minimal()
+
+})
+```
