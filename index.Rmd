@@ -1,14 +1,46 @@
 ---
 title: "California Covid-19"
-output: html_document
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: scroll
 runtime: shiny
 ---
+<style>
+body {
+  max-width: 1800px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: 50px;
+  font-weight: 500;
+}
+.column {
+  float: left;
+  width: 50%;
+}
+.row{
+  margin-left: 5%;
+  margin-bottom: 50px;
+}
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+</style>
 
 ```{r setup, include=FALSE}
 library(shiny)
 library(data.table)
 library(ggplot2)
 library(dplyr)
+library(flexdashboard)
+library(leaflet)
+library(curl)
+library(knitr)
+library(kableExtra)
+library(plotly)
 latimes.state.totals <- fread("https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/latimes-state-totals.csv", na.strings="?")
 latimes.county.totals <- fread("https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/latimes-county-totals.csv")
 cdph.race.ethnicity <- fread("https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/cdph-race-ethnicity.csv")
@@ -21,46 +53,249 @@ new.cases = latimes.state.totals[1, "new_confirmed_cases"]
 deaths = latimes.state.totals[1 , "deaths"]
 new.deaths = latimes.state.totals[1, "new_deaths"]
 ```
-# As of `r today` 
-# Cases: `r cases` (+`r new.cases`)
-# Deaths: `r deaths` (+`r new.deaths`)
+
+
+Key Stats
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+  
+
+### Stats: 
+<div class="row">
+  <div class="column">
+<h3>Total number of confirmed cases:</h3>
+<h1>`r cases`</h1>  
+<h3>Daily number of confirmed cases:</h3>
+<h1>`r new.cases`</h1>
+  </div>
+  <div class="column">
+<h3>Total number of COVID-19 associated deaths:</h3>
+<h1>`r deaths`</h1>
+<h3>Daily number of COVID-19 associated deaths:</h3>
+<h1>`r new.deaths`</h1>
+  </div>
+</div>
 
 ```{r, echo=FALSE}
-ggplot(latimes.state.totals) + 
-  geom_line(aes(x=as.Date(date), y=confirmed_cases, group=1)) +
-  geom_line(aes(x=as.Date(date), y=deaths, group=1)) + 
-  scale_x_date(date_labels = "%b",date_breaks = '1 month') +
-  labs(x = "Date", 
-       y = "Number of Cases",
-       title = "Evolution of cases in 2020") +
-  theme_minimal()
+tabledata = latimes.county.totals[1:117]
+tabledata$fips <- NULL
+tabledata$date <- NULL
+
+scroll_box(kable(tabledata, col.names= c("County", "Confirmed cases", "Deaths", "New cases", "New deaths")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive", full_width = FALSE)), height='800px')
 ```
 
+
+Plots
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Evolution of cases
 ```{r, echo=FALSE}
-
-selectInput("county1", label = "County 1:",
-              choices = unique(latimes.county.totals$county), selected = "Los Angeles")
-selectInput("county2", label = "County 2:",
-              choices = unique(latimes.county.totals$county), selected = "San Diego")
-selectInput("county3", label = "County 3:",
-              choices = unique(latimes.county.totals$county), selected = "Orange")
-selectInput("county4", label = "County 4:",
-              choices = unique(latimes.county.totals$county), selected = "San Francisco")
-selectInput("county5", label = "County 5:",
-              choices = unique(latimes.county.totals$county), selected = "Riverside")
-
-renderPlot({
-ggplot() + 
-  geom_line(data=filter(latimes.county.totals, county == input$county1), aes(as.Date(date), confirmed_cases, group=1)) +
-  geom_line(data=filter(latimes.county.totals, county == input$county2), aes(as.Date(date), confirmed_cases, group=1)) +
-  geom_line(data=filter(latimes.county.totals, county == input$county3), aes(as.Date(date), confirmed_cases, group=1)) +
-  geom_line(data=filter(latimes.county.totals, county == input$county4), aes(as.Date(date), confirmed_cases, group=1)) +
-  geom_line(data=filter(latimes.county.totals, county == input$county5), aes(as.Date(date), confirmed_cases, group=1)) +
+renderPlotly({
+ggplotly(ggplot(latimes.state.totals) + 
+  geom_line(aes(x=as.Date(date), y=confirmed_cases, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases)), size=1, color="red") +
   scale_x_date(date_labels = "%b",date_breaks = '1 month') +
   labs(x = "Date", 
-       y = "Number of Cases",
-       title = "Cases per county") +
-  theme_minimal()
+       y = "Number of cases") +
+  theme_minimal(), tooltip = "text")
+})
+```
+
+### Evolution of deaths
+```{r, echo=FALSE}
+renderPlotly({
+ggplotly(ggplot(latimes.state.totals) + 
+  geom_line(aes(x=as.Date(date), y=deaths, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths)), size=1, color="black") +
+  scale_x_date(date_labels = "%b",date_breaks = '1 month') +
+  labs(x = "Date", 
+       y = "Number of deaths") +
+  theme_minimal(), tooltip = "text")
+})
+```
+
+
+Row
+-----------------------------------------------------------------------
+
+### Cases per county
+```{r, echo=FALSE}
+
+renderPlotly({
+ggplotly(ggplot(mapping=aes(color=county)) + 
+  geom_line(data=filter(latimes.county.totals, county == input$county1), aes(as.Date(date), confirmed_cases, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases, '<br>County:', county))) +
+  geom_line(data=filter(latimes.county.totals, county == input$county2), aes(as.Date(date), confirmed_cases, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases, '<br>County:', county))) +
+  geom_line(data=filter(latimes.county.totals, county == input$county3), aes(as.Date(date), confirmed_cases, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases, '<br>County:', county))) +
+  geom_line(data=filter(latimes.county.totals, county == input$county4), aes(as.Date(date), confirmed_cases, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases, '<br>County:', county))) +
+  geom_line(data=filter(latimes.county.totals, county == input$county5), aes(as.Date(date), confirmed_cases, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases, '<br>County:', county))) +
+  scale_x_date(date_labels = "%b",date_breaks = '1 month') +
+  labs(x = "Date", 
+       y = "Number of Cases") +
+  theme_minimal(), tooltip = "text")
+})
+```
+
+### Select counties
+```{r, echo=FALSE, fig.width=1.6, fig.height=1}
+selectInput("county1", label = "County 1:",
+            choices = unique(latimes.county.totals$county), 
+            selected = "Santa Clara",
+            width = "155px")
+
+selectInput("county2", label = "County 2:",
+            choices = unique(latimes.county.totals$county), 
+            selected = "San Diego",
+            width = "155px")
+
+selectInput("county3", label = "County 3:",
+            choices = unique(latimes.county.totals$county), 
+            selected = "Orange",
+            width = "155px")
+selectInput("county4", label = "County 4:",
+            choices = unique(latimes.county.totals$county), 
+            selected = "San Francisco",
+            width = "155px")
+selectInput("county5", label = "County 5:",
+            choices = unique(latimes.county.totals$county), 
+            selected = "Riverside",
+            width = "155px")
+
+```
+
+### Deaths per county
+```{r, echo=FALSE}
+
+renderPlotly({
+ggplotly(ggplot(mapping=aes(color=county)) + 
+  geom_line(data=filter(latimes.county.totals, county == input$county1), aes(as.Date(date), deaths, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths, '<br>County:', county))) +
+  geom_line(data=filter(latimes.county.totals, county == input$county2), aes(as.Date(date), deaths, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths, '<br>County:', county))) +
+  geom_line(data=filter(latimes.county.totals, county == input$county3), aes(as.Date(date), deaths, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths, '<br>County:', county))) +
+  geom_line(data=filter(latimes.county.totals, county == input$county4), aes(as.Date(date), deaths, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths, '<br>County:', county))) +
+  geom_line(data=filter(latimes.county.totals, county == input$county5), aes(as.Date(date), deaths, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths, '<br>County:', county))) +
+  scale_x_date(date_labels = "%b",date_breaks = '1 month') +
+  labs(x = "Date", 
+       y = "Number of death") +
+  theme_minimal(), tooltip = "text")
+})
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Cases per age
+```{r, echo=FALSE}
+
+renderPlotly({
+ggplotly(ggplot(mapping=aes(color=age)) + 
+  geom_line(data=filter(cdph.race.ethnicity, age == input$age1 & race=="white"), aes(as.Date(date), confirmed_cases_total, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases_total, '<br>Age:', age))) +
+  geom_line(data=filter(cdph.race.ethnicity, age == input$age2 & race=="white"), aes(as.Date(date), confirmed_cases_total, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases_total, '<br>Age:', age))) +
+  geom_line(data=filter(cdph.race.ethnicity, age == input$age3 & race=="white"), aes(as.Date(date), confirmed_cases_total, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases_total, '<br>Age:', age))) +
+  scale_x_date(date_labels = "%b %d",date_breaks = '10 days') +
+  labs(x = "Date", 
+       y = "Number of cases") +
+  theme_minimal(), tooltip = "text")
+})
+
+```
+
+### Select ages
+```{r, echo=FALSE, fig.width=1.6, fig.height=1}
+selectInput("age1", label = "Age 1:",
+            choices = unique(c("0-17", "18-34", "35-49", "50-64", "65-79",  "80+")), 
+            selected = "0-17",
+            width = "155px")
+
+selectInput("age2", label = "Age 2:",
+            choices = unique(c("0-17", "18-34", "35-49", "50-64", "65-79",  "80+")), 
+            selected = "50-64",
+            width = "155px")
+
+selectInput("age3", label = "Age 3:",
+            choices = unique(c("0-17", "18-34", "35-49", "50-64", "65-79",  "80+")), 
+            selected = "80+",
+            width = "155px")
+```
+
+### Deaths per age
+```{r, echo=FALSE}
+
+renderPlotly({
+ggplotly(ggplot(mapping=aes(color=age)) +
+  geom_line(data=filter(cdph.race.ethnicity, age == input$age1 & race=="white"), aes(as.Date(date), deaths_total, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths_total, '<br>Age:', age))) +
+  geom_line(data=filter(cdph.race.ethnicity, age == input$age2 & race=="white"), aes(as.Date(date), deaths_total, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths_total, '<br>Age:', age))) +
+  geom_line(data=filter(cdph.race.ethnicity, age == input$age3 & race=="white"), aes(as.Date(date), deaths_total, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths_total, '<br>Age:', age))) +
+  scale_x_date(date_labels = "%b %d",date_breaks = '10 days') +
+  labs(x = "Date",
+       y = "Number of deaths") +
+  theme_minimal(), tooltip = "text")
 
 })
 ```
+
+Row
+-----------------------------------------------------------------------
+
+### Cases per race
+```{r, echo=FALSE}
+
+renderPlotly({
+ggplotly(ggplot(mapping=aes(color=race)) + 
+  geom_line(data=filter(cdph.race.ethnicity, age == "all" & race == input$race1), aes(as.Date(date), confirmed_cases_total, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases_total, '<br>Race:', race))) +
+  geom_line(data=filter(cdph.race.ethnicity, age == "all" & race == input$race2), aes(as.Date(date), confirmed_cases_total, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases_total, '<br>Race:', race))) +
+  geom_line(data=filter(cdph.race.ethnicity, age == "all" & race == input$race3), aes(as.Date(date), confirmed_cases_total, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases_total, '<br>Race:', race))) +
+  scale_x_date(date_labels = "%b %d",date_breaks = '10 days') +
+  labs(x = "Date", 
+       y = "Number of cases") +
+  theme_minimal(), tooltip = "text")
+})
+```
+
+### Select races
+```{r, echo=FALSE, fig.width=1.6, fig.height=1}
+selectInput("race1", label = "Race 1:",
+            choices = unique(c("asian", "black", "latino", "white", "other")), 
+            selected = "asian",
+            width = "155px")
+
+selectInput("race2", label = "Race 2:",
+            choices = unique(c("asian", "black", "latino", "white", "other")), 
+            selected = "black",
+            width = "155px")
+
+selectInput("race3", label = "Race 3:",
+            choices = unique(c("asian", "black", "latino", "white", "other")), 
+            selected = "latino",
+            width = "155px")
+```
+
+### Deaths per race
+```{r, echo=FALSE}
+
+renderPlotly({
+ggplotly(ggplot(mapping=aes(color=race)) + 
+  geom_line(data=filter(cdph.race.ethnicity, age == "all" & race == input$race1), aes(as.Date(date), deaths_total, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths_total, '<br>Race:', race))) +
+  geom_line(data=filter(cdph.race.ethnicity, age == "all" & race == input$race2), aes(as.Date(date), deaths_total, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths_total, '<br>Race:', race))) +
+  geom_line(data=filter(cdph.race.ethnicity, age == "all" & race == input$race3), aes(as.Date(date), deaths_total, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths_total, '<br>Race:', race))) +
+  scale_x_date(date_labels = "%b %d",date_breaks = '10 days') +
+  labs(x = "Date", 
+       y = "Number of deaths") +
+  theme_minimal(), tooltip = "text")
+})
+```
+
+
+Sources
+=======================================================================
+
+<h1>California Covid-19 Dashboard</h1>
+This dashboard demonstrates some key stats about the Coronavirus pandemic in California.<br> It shows some data from: <br>
+LA Times: https://github.com/datadesk/california-coronavirus-data/blob/master/latimes-state-totals.csv
+<br>California Department of Public Health: https://github.com/datadesk/california-coronavirus-data/blob/master/cdph-race-ethnicity.csv
+<br><br>
+By John Bonchristiano<br>
+
+

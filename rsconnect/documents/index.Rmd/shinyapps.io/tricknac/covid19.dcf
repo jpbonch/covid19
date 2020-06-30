@@ -1,0 +1,12 @@
+name: covid19
+title: covid19
+username:
+account: tricknac
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2512386
+bundleId: 3327490
+url: https://tricknac.shinyapps.io/covid19/
+when: 1593395584.86925
+asMultiple: FALSE
+asStatic: FALSE
