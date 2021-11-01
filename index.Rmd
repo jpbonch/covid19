@@ -4,6 +4,9 @@ output:
   flexdashboard::flex_dashboard:
     orientation: rows
     vertical_layout: scroll
+  html_document:
+  includes:
+    in_header: "favicon.html" 
 runtime: shiny
 ---
 <style>
@@ -99,7 +102,7 @@ Row
 renderPlotly({
 ggplotly(ggplot(latimes.state.totals) + 
   geom_line(aes(x=as.Date(date), y=confirmed_cases, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases)), size=1, color="red") +
-  scale_x_date(date_labels = "%b",date_breaks = '1 month') +
+  scale_x_date(date_labels = "%b",date_breaks = '2 months') +
   labs(x = "Date", 
        y = "Number of cases") +
   theme_minimal(), tooltip = "text")
@@ -111,7 +114,7 @@ ggplotly(ggplot(latimes.state.totals) +
 renderPlotly({
 ggplotly(ggplot(latimes.state.totals) + 
   geom_line(aes(x=as.Date(date), y=deaths, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths)), size=1, color="black") +
-  scale_x_date(date_labels = "%b",date_breaks = '1 month') +
+  scale_x_date(date_labels = "%b",date_breaks = '2 months') +
   labs(x = "Date", 
        y = "Number of deaths") +
   theme_minimal(), tooltip = "text")
@@ -132,7 +135,7 @@ ggplotly(ggplot(mapping=aes(color=county)) +
   geom_line(data=filter(latimes.county.totals, county == input$county3), aes(as.Date(date), confirmed_cases, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases, '<br>County:', county))) +
   geom_line(data=filter(latimes.county.totals, county == input$county4), aes(as.Date(date), confirmed_cases, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases, '<br>County:', county))) +
   geom_line(data=filter(latimes.county.totals, county == input$county5), aes(as.Date(date), confirmed_cases, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases, '<br>County:', county))) +
-  scale_x_date(date_labels = "%b",date_breaks = '1 month') +
+  scale_x_date(date_labels = "%b",date_breaks = '2 months') +
   labs(x = "Date", 
        y = "Number of Cases") +
   theme_minimal(), tooltip = "text")
@@ -176,7 +179,7 @@ ggplotly(ggplot(mapping=aes(color=county)) +
   geom_line(data=filter(latimes.county.totals, county == input$county3), aes(as.Date(date), deaths, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths, '<br>County:', county))) +
   geom_line(data=filter(latimes.county.totals, county == input$county4), aes(as.Date(date), deaths, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths, '<br>County:', county))) +
   geom_line(data=filter(latimes.county.totals, county == input$county5), aes(as.Date(date), deaths, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths, '<br>County:', county))) +
-  scale_x_date(date_labels = "%b",date_breaks = '1 month') +
+  scale_x_date(date_labels = "%b",date_breaks = '2 months') +
   labs(x = "Date", 
        y = "Number of death") +
   theme_minimal(), tooltip = "text")
@@ -194,7 +197,7 @@ ggplotly(ggplot(mapping=aes(color=age)) +
   geom_line(data=filter(cdph.race.ethnicity, age == input$age1 & race=="white"), aes(as.Date(date), confirmed_cases_total, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases_total, '<br>Age:', age))) +
   geom_line(data=filter(cdph.race.ethnicity, age == input$age2 & race=="white"), aes(as.Date(date), confirmed_cases_total, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases_total, '<br>Age:', age))) +
   geom_line(data=filter(cdph.race.ethnicity, age == input$age3 & race=="white"), aes(as.Date(date), confirmed_cases_total, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases_total, '<br>Age:', age))) +
-  scale_x_date(date_labels = "%b %d",date_breaks = '10 days') +
+  scale_x_date(date_labels = "%b",date_breaks = '2 months') +
   labs(x = "Date", 
        y = "Number of cases") +
   theme_minimal(), tooltip = "text")
@@ -228,7 +231,7 @@ ggplotly(ggplot(mapping=aes(color=age)) +
   geom_line(data=filter(cdph.race.ethnicity, age == input$age1 & race=="white"), aes(as.Date(date), deaths_total, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths_total, '<br>Age:', age))) +
   geom_line(data=filter(cdph.race.ethnicity, age == input$age2 & race=="white"), aes(as.Date(date), deaths_total, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths_total, '<br>Age:', age))) +
   geom_line(data=filter(cdph.race.ethnicity, age == input$age3 & race=="white"), aes(as.Date(date), deaths_total, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths_total, '<br>Age:', age))) +
-  scale_x_date(date_labels = "%b %d",date_breaks = '10 days') +
+  scale_x_date(date_labels = "%b",date_breaks = '2 months') +
   labs(x = "Date",
        y = "Number of deaths") +
   theme_minimal(), tooltip = "text")
@@ -247,7 +250,7 @@ ggplotly(ggplot(mapping=aes(color=race)) +
   geom_line(data=filter(cdph.race.ethnicity, age == "all" & race == input$race1), aes(as.Date(date), confirmed_cases_total, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases_total, '<br>Race:', race))) +
   geom_line(data=filter(cdph.race.ethnicity, age == "all" & race == input$race2), aes(as.Date(date), confirmed_cases_total, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases_total, '<br>Race:', race))) +
   geom_line(data=filter(cdph.race.ethnicity, age == "all" & race == input$race3), aes(as.Date(date), confirmed_cases_total, group=1, text = paste('Date: ', date, '<br>Cases:', confirmed_cases_total, '<br>Race:', race))) +
-  scale_x_date(date_labels = "%b %d",date_breaks = '10 days') +
+  scale_x_date(date_labels = "%b",date_breaks = '2 months') +
   labs(x = "Date", 
        y = "Number of cases") +
   theme_minimal(), tooltip = "text")
@@ -280,7 +283,7 @@ ggplotly(ggplot(mapping=aes(color=race)) +
   geom_line(data=filter(cdph.race.ethnicity, age == "all" & race == input$race1), aes(as.Date(date), deaths_total, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths_total, '<br>Race:', race))) +
   geom_line(data=filter(cdph.race.ethnicity, age == "all" & race == input$race2), aes(as.Date(date), deaths_total, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths_total, '<br>Race:', race))) +
   geom_line(data=filter(cdph.race.ethnicity, age == "all" & race == input$race3), aes(as.Date(date), deaths_total, group=1, text = paste('Date: ', date, '<br>Deaths:', deaths_total, '<br>Race:', race))) +
-  scale_x_date(date_labels = "%b %d",date_breaks = '10 days') +
+  scale_x_date(date_labels = "%b",date_breaks = '2 months') +
   labs(x = "Date", 
        y = "Number of deaths") +
   theme_minimal(), tooltip = "text")

@@ -5,8 +5,9 @@ account: tricknac
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2512386
-bundleId: 3327490
-url: https://tricknac.shinyapps.io/covid19/
-when: 1593395584.86925
+bundleId: 5196723
+url: https://jpbonch.shinyapps.io/covid19/
+when: 1635726681.59861
+lastSyncTime: 1635726681.59861
 asMultiple: FALSE
 asStatic: FALSE
